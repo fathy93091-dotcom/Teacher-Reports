@@ -342,6 +342,40 @@ function onTeacherLoggedIn(userObj) {
 document.addEventListener('DOMContentLoaded', () => {
     applyLanguage();
 
+    // Attach form submit listeners programmatically to prevent any default browser page reloads
+    const authForm = document.querySelector('#auth-section form');
+    if (authForm) {
+        authForm.addEventListener('submit', (e) => {
+            if (e) {
+                e.preventDefault();
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+            }
+            handleAuthSubmit(e);
+        });
+    }
+
+    const addStudentForm = document.querySelector('#add-student-modal form');
+    if (addStudentForm) {
+        addStudentForm.addEventListener('submit', (e) => {
+            if (e) {
+                e.preventDefault();
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+            }
+            handleAddStudentSubmit(e);
+        });
+    }
+
+    const settingsForm = document.querySelector('#screen-settings form');
+    if (settingsForm) {
+        settingsForm.addEventListener('submit', (e) => {
+            if (e) {
+                e.preventDefault();
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+            }
+            handleSettingsSave(e);
+        });
+    }
+
     // Set current date
     const dailyDateInput = document.getElementById('daily-date');
     if (dailyDateInput) dailyDateInput.valueAsDate = new Date();
@@ -446,7 +480,11 @@ function getArabicAuthErrorMessage(err) {
     }
 }
 
-async function handleDemoAuth() {
+async function handleDemoAuth(e) {
+    if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
     const errorDiv = document.getElementById('auth-error');
     const submitBtn = document.getElementById('auth-submit-btn');
     if (errorDiv) errorDiv.classList.add('hidden');
@@ -467,7 +505,10 @@ async function handleDemoAuth() {
 }
 
 async function handleAuthSubmit(e) {
-    if (e && e.preventDefault) e.preventDefault();
+    if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
 
     const email = document.getElementById('auth-email')?.value.trim() || '';
     const password = document.getElementById('auth-password')?.value || '';
@@ -2434,23 +2475,47 @@ async function handleFileUploadAndAIAnalysis(input) {
 
 // EXPOSE GLOBAL FUNCTIONS TO WINDOW FOR INLINE HTML EVENT HANDLERS (MODULE COMPATIBILITY)
 if (typeof window !== 'undefined') {
-    const fnList = [
-        'navigateTo', 'toggleMobileMenu', 'openStudentProfile', 'closeStudentProfileModal',
-        'deleteStudentLessonLocal', 'copyDailyReportTextFromHistory', 'sendMonthlyReportWhatsApp',
-        'parseAndFormatRawReportAI', 'generateDailyReportAI', 'saveDailyLessonLocally',
-        'sendDailyReportWhatsApp', 'toggleApiKeyVisibility', 'handleSettingsSave',
-        'exportBackupDataJSON', 'importBackupDataJSON', 'handleFileUploadAndSummarizeAI',
-        'onDailyDateChanged', 'updateCalculatedLessonNumber', 'selectStudentForDaily',
-        'editStudent', 'deleteStudent', 'saveStudent', 'filterStudents', 'resetStudentForm',
-        'exportStudentReportsDoc', 'printStudentReportsPDF', 'printMonthlyReportPDF',
-        'exportMonthlyReportDoc', 'generateMonthlyReportAI', 'saveMonthlyReportLocally',
-        'exportAllDataBackup', 'importDataBackup', 'loadSettingsInputs', 'getEffectiveGeminiApiKey'
-    ];
-    fnList.forEach(fn => {
-        try {
-            if (typeof eval(fn) === 'function') {
-                window[fn] = eval(fn);
-            }
-        } catch(e) {}
-    });
+    window.navigateTo = navigateTo;
+    window.toggleMobileMenu = toggleMobileMenu;
+    window.openStudentProfile = openStudentProfile;
+    window.closeStudentProfileModal = closeStudentProfileModal;
+    window.deleteStudentLessonLocal = deleteStudentLessonLocal;
+    window.copyDailyReportTextFromHistory = copyDailyReportTextFromHistory;
+    window.sendMonthlyReportWhatsApp = sendMonthlyReportWhatsApp;
+    window.parseAndFormatRawReportAI = parseAndFormatRawReportAI;
+    window.generateDailyReportAI = generateDailyReportAI;
+    window.saveDailyLessonLocally = saveDailyLessonLocally;
+    window.sendDailyReportWhatsApp = sendDailyReportWhatsApp;
+    window.toggleApiKeyVisibility = toggleApiKeyVisibility;
+    window.handleSettingsSave = handleSettingsSave;
+    window.exportBackupDataJSON = exportBackupDataJSON;
+    window.importBackupDataJSON = importBackupDataJSON;
+    window.handleFileUploadAndSummarizeAI = handleFileUploadAndSummarizeAI;
+    window.onDailyDateChanged = onDailyDateChanged;
+    window.updateCalculatedLessonNumber = updateCalculatedLessonNumber;
+    window.selectStudentForDaily = selectStudentForDaily;
+    window.editStudent = editStudent;
+    window.deleteStudent = deleteStudent;
+    window.openAddStudentModal = openAddStudentModal;
+    window.closeAddStudentModal = closeAddStudentModal;
+    window.handleAddStudentSubmit = handleAddStudentSubmit;
+    window.saveStudent = handleAddStudentSubmit;
+    window.filterStudents = filterStudents;
+    window.exportStudentReportsDoc = exportStudentReportsDoc;
+    window.printStudentReportsPDF = printStudentReportsPDF;
+    window.printMonthlyReportPDF = printMonthlyReportPDF;
+    window.exportMonthlyReportDoc = exportMonthlyReportDoc;
+    window.generateMonthlyReportAI = generateMonthlyReportAI;
+    window.saveMonthlyReportLocally = saveMonthlyReportLocally;
+    window.exportAllDataBackup = exportAllDataBackup;
+    window.importDataBackup = importDataBackup;
+    window.loadSettingsInputs = loadSettingsInputs;
+    window.getEffectiveGeminiApiKey = getEffectiveGeminiApiKey;
+    window.handleAuthSubmit = handleAuthSubmit;
+    window.handleDemoAuth = handleDemoAuth;
+    window.toggleAuthMode = toggleAuthMode;
+    window.logout = logout;
+    window.onSubjectChanged = onSubjectChanged;
+    window.toggleLanguage = toggleLanguage;
+    window.applyLanguage = applyLanguage;
 }
