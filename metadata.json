@@ -1,0 +1,6 @@
+{
+  "name": "Teacher Reports",
+  "description": "AI-Powered Assistant for Quran, Arabic, and Islamic Studies teachers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

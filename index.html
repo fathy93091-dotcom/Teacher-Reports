@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تقارير المعلم الإسلامي - Islamic Teacher Reports</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d'
+                        },
+                        whatsapp: '#25D366'
+                    },
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                        amiri: ['Amiri', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Firebase v10 Compatibility SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f8fafc;
+        }
+        .font-amiri {
+            font-family: 'Amiri', serif;
+        }
+        
+        /* Print Styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printable-area, #printable-area * {
+                visibility: visible;
+            }
+            #printable-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 20px;
+                background: white;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #16a34a;
+            width: 18px;
+            height: 18px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- TOP NAVBAR -->
+    <header class="bg-primary-800 text-white shadow-md sticky top-0 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo & Title -->
+                <div class="flex items-center space-x-3 space-x-reverse cursor-pointer" onclick="navigateTo('dashboard')">
+                    <div class="bg-white/10 p-2 rounded-xl text-primary-200">
+                        <i class="fa-solid fa-book-quran text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold leading-tight" data-i18n="app_title">تقارير المعلم الإسلامي</h1>
+                        <p class="text-xs text-primary-200 font-light" data-i18n="app_subtitle">نظام متابعة الطلاب والتقارير الذكية</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Links -->
+                <nav id="main-nav" class="hidden md:flex space-x-1 space-x-reverse">
+                    <button onclick="navigateTo('dashboard')" id="nav-dashboard" class="px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line"></i> <span data-i18n="nav_dashboard">لوحة التحكم</span>
+                    </button>
+                    <button onclick="navigateTo('students')" id="nav-students" class="px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition flex items-center gap-2">
+                        <i class="fa-solid fa-user-graduate"></i> <span data-i18n="nav_students">قائمة الطلاب</span>
+                    </button>
+                    <button onclick="navigateTo('daily')" id="nav-daily" class="px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition flex items-center gap-2">
+                        <i class="fa-solid fa-pen-to-square"></i> <span data-i18n="nav_daily">درس يومي</span>
+                    </button>
+                    <button onclick="navigateTo('monthly')" id="nav-monthly" class="px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition flex items-center gap-2">
+                        <i class="fa-solid fa-file-invoice"></i> <span data-i18n="nav_monthly">تقرير شهري</span>
+                    </button>
+                    <button onclick="navigateTo('settings')" id="nav-settings" class="px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition flex items-center gap-2">
+                        <i class="fa-solid fa-gear"></i> <span data-i18n="nav_settings">الإعدادات</span>
+                    </button>
+                </nav>
+
+                <!-- User Profile, Sync Badge & Language Switcher -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- Language Switcher Button -->
+                    <button onclick="toggleLanguage()" class="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-globe text-amber-300"></i>
+                        <span id="lang-btn-label">English</span>
+                    </button>
+
+                    <div id="sync-badge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-900/50 text-emerald-200 border border-emerald-500/30">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> <span data-i18n="cloud_connected">متصل بالسحابة</span>
+                    </div>
+
+                    <div id="user-info" class="hidden items-center gap-2">
+                        <span id="user-display-name" class="text-sm font-semibold text-primary-100">المعلم</span>
+                        <button onclick="logout()" title="تسجيل الخروج" class="p-2 text-primary-200 hover:text-white hover:bg-primary-700 rounded-lg transition">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MOBILE NAVIGATION BOTTOM BAR -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 flex justify-around py-2 shadow-lg no-print">
+        <button onclick="navigateTo('dashboard')" class="flex flex-col items-center text-xs text-slate-600 hover:text-primary-700">
+            <i class="fa-solid fa-chart-line text-lg mb-1"></i> <span data-i18n="nav_dashboard">الرئيسية</span>
+        </button>
+        <button onclick="navigateTo('students')" class="flex flex-col items-center text-xs text-slate-600 hover:text-primary-700">
+            <i class="fa-solid fa-user-graduate text-lg mb-1"></i> <span data-i18n="nav_students">الطلاب</span>
+        </button>
+        <button onclick="navigateTo('daily')" class="flex flex-col items-center text-xs text-slate-600 hover:text-primary-700">
+            <i class="fa-solid fa-pen-to-square text-lg mb-1"></i> <span data-i18n="nav_daily">درس يومي</span>
+        </button>
+        <button onclick="navigateTo('monthly')" class="flex flex-col items-center text-xs text-slate-600 hover:text-primary-700">
+            <i class="fa-solid fa-file-invoice text-lg mb-1"></i> <span data-i18n="nav_monthly">شهري</span>
+        </button>
+        <button onclick="navigateTo('settings')" class="flex flex-col items-center text-xs text-slate-600 hover:text-primary-700">
+            <i class="fa-solid fa-gear text-lg mb-1"></i> <span data-i18n="nav_settings">الإعدادات</span>
+        </button>
+    </nav>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 mb-16 md:mb-6">
+
+        <!-- AUTH SECTION -->
+        <section id="auth-section" class="max-w-md mx-auto my-12 bg-white p-8 rounded-2xl shadow-xl border border-slate-100 text-center">
+            <div class="w-16 h-16 bg-primary-100 text-primary-700 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2" id="auth-title" data-i18n="auth_title">تسجيل الدخول للمعلم</h2>
+            <p class="text-sm text-slate-500 mb-6" data-i18n="auth_subtitle">قم بتسجيل الدخول لبدء حفظ ومزامنة تقارير طلابك سحابياً تلقائياً</p>
+
+            <form onsubmit="handleAuthSubmit(event); return false;" class="space-y-4 text-right">
+                <div id="name-field" class="hidden">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="teacher_name_label">اسم المعلم</label>
+                    <input type="text" id="auth-name" placeholder="أدخل اسمك الكريم" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="email_label">البريد الإلكتروني</label>
+                    <input type="email" id="auth-email" required placeholder="example@domain.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm" dir="ltr">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="password_label">كلمة المرور</label>
+                    <input type="password" id="auth-password" required placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm" dir="ltr">
+                </div>
+
+                <!-- Remember Me Checkbox -->
+                <div class="flex items-center justify-between text-xs py-1">
+                    <label class="flex items-center gap-2 cursor-pointer text-slate-600 font-medium select-none">
+                        <input type="checkbox" id="auth-remember-me" class="w-4 h-4 text-primary-600 rounded border-slate-300 focus:ring-primary-500 accent-primary-600">
+                        <span data-i18n="remember_me_label">تذكرني</span>
+                    </label>
+                </div>
+
+                <div id="auth-error" class="hidden text-xs text-red-600 bg-red-50 p-3 rounded-lg border border-red-200"></div>
+
+                <button type="submit" id="auth-submit-btn" class="w-full py-3 bg-primary-700 hover:bg-primary-800 text-white rounded-xl font-bold text-sm shadow-md transition flex justify-center items-center gap-2">
+                    <span data-i18n="login_btn">تسجيل الدخول</span>
+                </button>
+
+                <button type="button" onclick="handleDemoAuth()" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition flex justify-center items-center gap-2 mt-2">
+                    <i class="fa-solid fa-bolt text-amber-500"></i>
+                    <span data-i18n="demo_login_btn">دخول تجريبي سريع</span>
+                </button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 flex justify-center text-xs text-slate-500">
+                <span id="auth-toggle-msg" data-i18n="no_account_msg">ليس لديك حساب؟</span>
+                <button onclick="toggleAuthMode()" id="auth-toggle-btn" class="mr-1 text-primary-700 font-bold hover:underline" data-i18n="register_link">إنشاء حساب جديد</button>
+            </div>
+        </section>
+
+        <!-- DASHBOARD SCREEN -->
+        <section id="screen-dashboard" class="space-y-6 hidden">
+            <!-- Welcome Header -->
+            <div class="bg-gradient-to-l from-primary-800 to-primary-900 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold mb-1"><span data-i18n="welcome_teacher">أهلاً بك،</span> <span id="dash-teacher-name">المعلم</span> 👋</h2>
+                    <p class="text-primary-200 text-sm" data-i18n="dash_welcome_sub">مرحباً بك في لوحة تحكم تقارير حلقات القرآن واللغة العربية والعلوم الإسلامية.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="navigateTo('daily')" class="bg-white text-primary-800 hover:bg-primary-50 px-4 py-2 rounded-xl font-bold text-xs shadow transition flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_daily">إضافة درس يومي</span>
+                    </button>
+                    <button onclick="navigateTo('monthly')" class="bg-primary-700 text-white hover:bg-primary-600 px-4 py-2 rounded-xl font-bold text-xs shadow border border-primary-500 transition flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> <span data-i18n="btn_gen_monthly">توليد تقرير شهري</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold" data-i18n="stat_total_students">إجمالي الطلاب</p>
+                        <h3 class="text-xl font-bold text-slate-800" id="stat-total-students">0</h3>
+                        <p class="text-[11px] text-emerald-700 font-semibold mt-0.5" id="stat-active-subjects">0 مواد نشطة</p>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div class="w-12 h-12 bg-blue-100 text-blue-700 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold" data-i18n="stat_today_lessons">دروس اليوم</p>
+                        <h3 class="text-xl font-bold text-slate-800" id="stat-today-lessons">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div class="w-12 h-12 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-file-invoice"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold" data-i18n="stat_monthly_reports">التقارير الشهرية</p>
+                        <h3 class="text-xl font-bold text-slate-800" id="stat-monthly-reports">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold" data-i18n="stat_ai_engine">محرّك الذكاء الاصطناعي</p>
+                        <h3 class="text-xs font-bold text-amber-800" id="stat-ai-model">Gemini 2.5 Flash</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Students List -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-users text-primary-700"></i> <span data-i18n="my_students_list">قائمتي المباشرة للطلاب</span>
+                    </h3>
+                    <button onclick="openAddStudentModal()" class="text-xs font-bold text-primary-700 hover:underline flex items-center gap-1">
+                        <i class="fa-solid fa-user-plus"></i> <span data-i18n="btn_add_student">طالب جديد</span>
+                    </button>
+                </div>
+                <div id="dash-students-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Dynamic Student Cards -->
+                </div>
+            </div>
+        </section>
+
+        <!-- STUDENTS SCREEN -->
+        <section id="screen-students" class="space-y-6 hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <div class="relative w-full sm:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute right-3 top-3 text-slate-400"></i>
+                    <input type="text" id="student-search-input" oninput="filterStudents()" placeholder="البحث باسم الطالب أو المستوى..." class="w-full pr-9 pl-4 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" data-i18n-ph="ph_search_student">
+                </div>
+                <button onclick="openAddStudentModal()" class="w-full sm:w-auto px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-xl text-xs font-bold shadow transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-user-plus"></i> <span data-i18n="btn_add_new_student">إضافة طالب جديد</span>
+                </button>
+            </div>
+
+            <div id="students-full-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Students Cards -->
+            </div>
+        </section>
+
+        <!-- DAILY LESSON ENTRY SCREEN -->
+        <section id="screen-daily" class="max-w-3xl mx-auto space-y-6 hidden">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-primary-700"></i> <span data-i18n="daily_title">تسجيل الدرس والتقييم اليومي</span>
+                </h2>
+
+                <form onsubmit="handleDailyLessonSubmit(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="select_student_label">اختر الطالب *</label>
+                            <select id="daily-student-select" required onchange="onDailyStudentChanged()" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+                                <option value="">-- اختر الطالب --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">رقم الحصة *</label>
+                            <input type="number" id="daily-lesson-number" min="1" value="1" placeholder="مثال: 1" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-primary-800 bg-primary-50/50 focus:ring-2 focus:ring-primary-500 outline-none" title="يتعدل تلقائياً ويرجع لرقم 1 يوم 1 في الشهر الجديد">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">مدة الدرس *</label>
+                            <input type="text" id="daily-lesson-duration" value="45 دقيقة" placeholder="مثال: 45 دقيقة" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="date_label">التاريخ *</label>
+                            <input type="date" id="daily-date" required onchange="onDailyDateChanged()" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- MULTI-SUBJECT SELECTION FREEDOM -->
+                    <div class="bg-emerald-50/80 p-3.5 rounded-xl border border-emerald-200 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                                <i class="fa-solid fa-layer-group text-emerald-700"></i>
+                                <span data-i18n="subject_multi_label">المواد المشمولة في هذا الدرس (يمكنك اختيار أكثر من مادة بحرية) *</span>
+                            </label>
+                            <button type="button" onclick="selectAllDailySubjects(true)" class="text-[11px] font-bold text-emerald-700 hover:underline">
+                                تحديد الكل (شامل)
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <label class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer hover:border-emerald-500 transition select-none shadow-sm">
+                                <input type="checkbox" id="daily-subj-quran" class="w-4 h-4 text-emerald-600 rounded border-slate-300 accent-emerald-600" onchange="onSubjectSelectionChanged()" checked>
+                                <span>📖 القرآن الكريم</span>
+                            </label>
+                            <label class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer hover:border-emerald-500 transition select-none shadow-sm">
+                                <input type="checkbox" id="daily-subj-arabic" class="w-4 h-4 text-emerald-600 rounded border-slate-300 accent-emerald-600" onchange="onSubjectSelectionChanged()">
+                                <span>✍️ اللغة العربية</span>
+                            </label>
+                            <label class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer hover:border-emerald-500 transition select-none shadow-sm">
+                                <input type="checkbox" id="daily-subj-islamic" class="w-4 h-4 text-emerald-600 rounded border-slate-300 accent-emerald-600" onchange="onSubjectSelectionChanged()">
+                                <span>🕌 العلوم الإسلامية</span>
+                            </label>
+                            <input type="text" id="daily-subj-custom" placeholder="مادة إضافية أخرى..." class="flex-1 min-w-[140px] px-3 py-1.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 outline-none bg-white" oninput="onSubjectSelectionChanged()">
+                        </div>
+                        <input type="hidden" id="daily-subject-select" value="القرآن الكريم">
+                    </div>
+
+                    <!-- SINGLE RAW FULL TEXT INPUT FOR AI PARSING -->
+                    <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                                <i class="fa-solid fa-align-left text-amber-700"></i>
+                                <span data-i18n="raw_input_label">إدخال التقرير المباشر دفعة واحدة (كتابة أو لصق كامل الدرس)</span>
+                            </label>
+                            <span class="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-bold" data-i18n="ai_feature_badge">خاصية الذكاء الاصطناعي</span>
+                        </div>
+                        <textarea id="daily-raw-input" rows="3" class="w-full px-3 py-2 rounded-lg border border-amber-300 text-xs focus:ring-2 focus:ring-amber-500 outline-none bg-white" placeholder="مثال: أحمد حفظ اليوم سورة المزمل 1-10، وراجع جزء عم، مدة الدرس 45 دقيقة، وتلاوته كانت ممتازة والواجب مراجعة الجزء الأول" data-i18n-ph="ph_raw_input"></textarea>
+                        <button type="button" onclick="parseAndFormatRawReportAI()" id="btn-parse-raw-ai" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-xs shadow-sm transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span data-i18n="btn_parse_raw_ai">تحليل وتنسيق التقرير تلقائياً بالذكاء الاصطناعي</span>
+                        </button>
+                    </div>
+
+                    <!-- DISPLAY STUDENT CUSTOM INSTRUCTIONS IF ANY -->
+                    <div id="student-prompt-badge" class="hidden text-xs bg-emerald-50 text-emerald-800 p-3 rounded-xl border border-emerald-200 items-start gap-2">
+                        <i class="fa-solid fa-circle-info text-emerald-600 mt-0.5"></i>
+                        <div>
+                            <strong>توجيهات الذكاء الاصطناعي المخصصة لهذا الطالب:</strong>
+                            <p id="student-prompt-text" class="text-emerald-700 mt-0.5 italic"></p>
+                        </div>
+                    </div>
+
+                    <!-- TEACHER SPECIAL NOTES -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="teacher_notes_label">ملاحظات المعلم الخاصة (اختياري)</label>
+                        <input type="text" id="daily-teacher-notes" placeholder="ملاحظات سريعة للأستاذ حول أداء اليوم..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary-500 outline-none" data-i18n-ph="ph_teacher_notes">
+                    </div>
+
+                    <!-- SMART FILE UPLOAD & GEMINI DOCUMENT ANALYSIS -->
+                    <div class="p-4 bg-gradient-to-r from-blue-50/70 to-indigo-50/70 border border-blue-200/80 rounded-xl space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                <i class="fa-solid fa-cloud-arrow-up text-blue-600 text-sm"></i>
+                                <span>رفع ملف / صورة / مستند للدرس (تخزين سحابي + تحليل بالذكاء الاصطناعي Gemini)</span>
+                            </label>
+                            <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-md">Firebase Storage + Gemini</span>
+                        </div>
+                        <div onclick="document.getElementById('daily-file-input').click()" class="border-2 border-dashed border-blue-300 hover:border-blue-500 rounded-xl p-4 text-center cursor-pointer bg-white/90 transition hover:bg-blue-50/50 group">
+                            <i class="fa-solid fa-file-circle-plus text-2xl text-blue-400 group-hover:text-blue-600 transition mb-1"></i>
+                            <p class="text-xs font-bold text-slate-700">اضغط هنا لرفع أي ملف (صور، PDF، Word .docx، PPTX)</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">سيتم رفع الملف سحابياً وقراءة محتواه وتلخيصه تلقائياً بالذكاء الاصطناعي في آخر التقرير</p>
+                            <input type="file" id="daily-file-input" onchange="handleFileUploadAndAIAnalysis(this)" class="hidden">
+                        </div>
+                        <div id="upload-status-indicator" class="hidden text-xs font-semibold p-2.5 rounded-lg"></div>
+                        <div id="uploaded-file-info" class="hidden bg-white p-3 rounded-xl border border-slate-200 text-xs space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <span id="uploaded-file-name" class="font-bold text-slate-800 truncate"></span>
+                                <a id="uploaded-file-link" href="#" target="_blank" class="text-blue-600 hover:underline text-[11px] font-bold flex items-center gap-1 shrink-0"><i class="fa-solid fa-external-link"></i> عرض المستند</a>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">ملخص وتحليل محتوى الملف (Gemini AI Summary):</label>
+                                <textarea id="daily-file-summary" rows="2" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 outline-none" placeholder="سيقوم الذكاء الاصطناعي بكتابة وتضمين ملخص المستند المرفق هنا..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Generation Button -->
+                    <div class="pt-2">
+                        <button type="button" onclick="generateDailyReportAI()" id="btn-generate-daily-ai" class="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-xl font-bold text-xs shadow-sm transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+                            <span>توليد التقرير الكامل الموحد بالذكاء الاصطناعي (Gemini)</span>
+                        </button>
+                    </div>
+
+                    <!-- Output Fields -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-bold text-slate-800">نص التقرير الموحد الكامل الموجه لولي الأمر (عربي)</label>
+                            <button type="button" onclick="copyDailyReportText()" class="text-xs text-emerald-700 hover:underline font-bold flex items-center gap-1">
+                                <i class="fa-solid fa-copy"></i> <span>نسخ التقرير الكامل</span>
+                            </button>
+                        </div>
+                        <textarea id="daily-report-arabic" rows="8" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-amiri focus:ring-2 focus:ring-primary-500 outline-none leading-relaxed shadow-inner" placeholder="اكتب نص التقرير اليومي هنا بكل سهولة وسلاسة، أو اضغط زر التوليد بالذكاء الاصطناعي..." data-i18n-ph="ph_arabic_report"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="english_summary_label">English Summary (Accurate Islamic Terminology)</label>
+                        <textarea id="daily-report-english" rows="3" dir="ltr" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary-500 outline-none" placeholder="English report with accurate Islamic terms (Noble Quran, Surah, Tajweed, Tilawah, etc.)..." data-i18n-ph="ph_english_summary"></textarea>
+                    </div>
+
+                    <!-- ACTION BUTTONS: SAVE, COPY & WHATSAPP -->
+                    <div class="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <button type="submit" class="py-3 bg-primary-800 hover:bg-primary-900 text-white rounded-xl font-bold text-sm shadow transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save_daily">حفظ التقرير في السحابة</span>
+                        </button>
+                        <button type="button" onclick="copyDailyReportText()" class="py-3 bg-slate-700 hover:bg-slate-800 text-white rounded-xl font-bold text-sm shadow transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-copy"></i> <span>نسخ التقرير</span>
+                        </button>
+                        <button type="button" onclick="sendDailyReportWhatsApp()" class="py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-bold text-sm shadow transition flex items-center justify-center gap-2">
+                            <i class="fa-brands fa-whatsapp text-lg"></i> <span data-i18n="btn_send_whatsapp">إرسال عبر الواتساب</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- MONTHLY REPORT GENERATION SCREEN -->
+        <section id="screen-monthly" class="max-w-4xl mx-auto space-y-6 hidden">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h2 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-file-invoice text-primary-700"></i> <span data-i18n="monthly_title">إنشاء وتوليد التقرير الشهري الشامل</span>
+                </h2>
+                <p class="text-xs text-slate-500 mb-6">اختر الطالب والشهر والسنة ليقوم الذكاء الاصطناعي بقراءة جميع تقارير الطالب اليومية وتوليد تقرير شهري شامل وموثق تلقائياً.</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="select_student_label">اختر الطالب *</label>
+                        <select id="monthly-student-select" onchange="onMonthlyStudentChanged()" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+                            <option value="">-- اختر الطالب --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="month_year_label">الشهر / السنة *</label>
+                        <input type="month" id="monthly-month-year" onchange="onMonthlyStudentChanged()" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+                    </div>
+                </div>
+
+                <!-- MULTI-SUBJECT SELECTION FOR MONTHLY REPORT -->
+                <div class="bg-emerald-50/80 p-3.5 rounded-xl border border-emerald-200 space-y-2 mb-6">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                            <i class="fa-solid fa-layer-group text-emerald-700"></i>
+                            <span>المواد المشمولة في التقرير الشهري (اختر إحدى المواد أو عدة مواد أو جميعها بحرية)</span>
+                        </label>
+                        <button type="button" onclick="selectAllMonthlySubjects(true)" class="text-[11px] font-bold text-emerald-700 hover:underline">
+                            تحديد الكل (شامل)
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <label class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer hover:border-emerald-500 transition select-none shadow-sm">
+                            <input type="checkbox" id="monthly-subj-quran" class="w-4 h-4 text-emerald-600 rounded border-slate-300 accent-emerald-600" onchange="onMonthlySubjectSelectionChanged()" checked>
+                            <span>📖 القرآن الكريم</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer hover:border-emerald-500 transition select-none shadow-sm">
+                            <input type="checkbox" id="monthly-subj-arabic" class="w-4 h-4 text-emerald-600 rounded border-slate-300 accent-emerald-600" onchange="onMonthlySubjectSelectionChanged()" checked>
+                            <span>✍️ اللغة العربية</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer hover:border-emerald-500 transition select-none shadow-sm">
+                            <input type="checkbox" id="monthly-subj-islamic" class="w-4 h-4 text-emerald-600 rounded border-slate-300 accent-emerald-600" onchange="onMonthlySubjectSelectionChanged()" checked>
+                            <span>🕌 العلوم الإسلامية</span>
+                        </label>
+                        <input type="text" id="monthly-subj-custom" placeholder="مادة أخرى..." class="flex-1 min-w-[120px] px-3 py-1.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 outline-none bg-white" oninput="onMonthlySubjectSelectionChanged()">
+                    </div>
+                    <input type="hidden" id="monthly-subject-select" value="شامل (جميع المواد)">
+                </div>
+
+                <!-- STUDENT PERFORMANCE & PROGRESS ANALYTICS CHART -->
+                <div id="monthly-chart-card" class="bg-gradient-to-br from-slate-50 to-emerald-50/40 border border-emerald-200/80 rounded-2xl p-4 sm:p-5 mb-6">
+                    <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-chart-line text-emerald-600 text-base"></i>
+                                <span>مؤشر التطور ورسم الأداء البياني للطالب (Chart.js)</span>
+                            </h3>
+                            <p class="text-xs text-slate-500">متابعة مرئية تفاعلية لتطور نتائج الحفظ والمراجعة والالتزام للسنوات والأشهر الماضية</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-bold text-slate-600">نوع الرسم البياني:</label>
+                            <select id="chart-type-select" onchange="updateStudentProgressChart()" class="text-xs px-3 py-1.5 rounded-xl border border-slate-300 bg-white font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm">
+                                <option value="line">📈 خطي (Line Chart)</option>
+                                <option value="bar">📊 أعمدة (Bar Chart)</option>
+                                <option value="radar">🎯 راداري (Radar Chart)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="relative w-full h-64 sm:h-72 bg-white p-3 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-center">
+                        <canvas id="studentMonthlyChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-3 mb-6">
+                    <button onclick="generateMonthlyReportAI()" id="btn-gen-monthly-ai" class="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-xl font-bold text-sm shadow transition flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+                        <span data-i18n="btn_gen_monthly_ai">توليد التقرير الشهري بالذكاء الاصطناعي بناءً على الدروس اليومية</span>
+                    </button>
+                    <button onclick="exportStudentReportsDocFromMonthly()" class="py-3 px-4 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-bold text-xs shadow transition flex items-center gap-2">
+                        <i class="fa-solid fa-file-word"></i>
+                        <span>تصدير ملف Word (.doc)</span>
+                    </button>
+                    <button onclick="printStudentReportsPDFFromMonthly()" class="py-3 px-4 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs shadow transition flex items-center gap-2">
+                        <i class="fa-solid fa-print"></i>
+                        <span>طباعة / تصدير PDF</span>
+                    </button>
+                </div>
+
+                <!-- Generated Report Display Card -->
+                <div id="monthly-report-preview-container" class="hidden space-y-4">
+                    <div id="printable-area" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-md space-y-4">
+                        <div class="border-b pb-4 flex justify-between items-center">
+                            <div>
+                                <h3 class="text-xl font-bold text-primary-900" id="pr-student-name">تقرير الطالب</h3>
+                                <p class="text-xs text-slate-500" id="pr-report-period">التقرير الشهري لمتابعة حلقة القرآن والعلوم الإسلامية</p>
+                            </div>
+                            <div class="text-left">
+                                <span class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold" id="pr-teacher-label">المعلم: -</span>
+                            </div>
+                        </div>
+
+                        <!-- Evaluations List -->
+                        <div class="space-y-2 text-sm text-slate-700" id="pr-evaluations-body">
+                            <!-- Dynamic Content -->
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-100 flex flex-wrap justify-between items-center gap-2 no-print">
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="saveMonthlyReportToFirebase()" class="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-xl font-bold text-xs shadow flex items-center gap-2">
+                                    <i class="fa-solid fa-floppy-disk"></i> <span data-i18n="btn_save_report">حفظ التقرير</span>
+                                </button>
+                                <button onclick="sendMonthlyReportWhatsApp()" class="px-4 py-2 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl font-bold text-xs shadow flex items-center gap-2">
+                                    <i class="fa-brands fa-whatsapp text-base"></i> <span data-i18n="btn_send_whatsapp">إرسال للواتساب</span>
+                                </button>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="exportStudentReportsDocFromMonthly()" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-bold text-xs shadow flex items-center gap-2">
+                                    <i class="fa-solid fa-file-word"></i> <span>تصدير Word</span>
+                                </button>
+                                <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs shadow flex items-center gap-2">
+                                    <i class="fa-solid fa-print"></i> <span data-i18n="btn_print">طباعة / تصدير PDF</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SETTINGS SCREEN -->
+        <section id="screen-settings" class="max-w-2xl mx-auto space-y-6 hidden">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-6">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-gear text-primary-700"></i> <span data-i18n="settings_title">الإعدادات العامة وإدارة البيانات</span>
+                </h2>
+
+                <form onsubmit="handleSettingsSave(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="teacher_name_auth_label">اسم المعلم المعتمد</label>
+                        <input type="text" id="settings-teacher-name" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="ai_model_label">نموذج الذكاء الاصطناعي (Gemini Model)</label>
+                        <select id="settings-ai-model" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+                            <option value="gemini-2.0-flash" selected>Gemini 2.0 Flash (الأحدث والأسرع - موصى به)</option>
+                            <option value="gemini-1.5-flash">Gemini 1.5 Flash (مستقر وسريع)</option>
+                            <option value="gemini-1.5-pro">Gemini 1.5 Pro (للتحليل المعقد)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">مفتاح API للذكاء الاصطناعي (Gemini API Key)</label>
+                        <div class="relative">
+                            <input type="password" id="settings-api-key" placeholder="أدخل مفتاح AIzaSy... (اختياري)" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+                            <button type="button" onclick="toggleApiKeyVisibility()" class="absolute left-3 top-2.5 text-slate-400 hover:text-slate-600">
+                                <i class="fa-solid fa-eye" id="eye-icon"></i>
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1 flex flex-wrap items-center justify-between gap-1">
+                            <span>يمكنك ترك هذا الحقل فارغاً لاستخدام المفتاح المدمج، أو إدخال مفتاحك الخاص من Google AI Studio.</span>
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-primary-700 font-bold hover:underline shrink-0">احصل على مفتاح مجاني <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i></a>
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="global_instructions_label">توجيهات الذكاء الاصطناعي العامة (Global AI Instructions)</label>
+                        <textarea id="settings-global-instructions" rows="4" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary-500 outline-none"></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full py-3 bg-primary-800 hover:bg-primary-900 text-white rounded-xl font-bold text-sm shadow transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-check"></i> <span data-i18n="btn_save_settings">حفظ التغييرات</span>
+                    </button>
+                </form>
+
+                <!-- DATA BACKUP & RESTORE SECTION -->
+                <div class="pt-4 border-t border-slate-200 space-y-3">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-database text-primary-700"></i> <span data-i18n="backup_section_title">النسخ الاحتياطي وتصدير البيانات</span>
+                    </h3>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="exportBackupDataJSON()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center gap-2 border border-slate-300">
+                            <i class="fa-solid fa-download"></i> <span data-i18n="btn_export_json">تصدير نسخة احتياطية (JSON)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ADD / EDIT STUDENT MODAL -->
+    <div id="add-student-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-base" id="modal-title-text" data-i18n="modal_add_student_title">إضافة / تعديل طالب</h3>
+                <button onclick="closeAddStudentModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleAddStudentSubmit(event)" class="space-y-3">
+                <input type="hidden" id="modal-student-id">
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="student_fullname_label">اسم الطالب الكامل *</label>
+                    <input type="text" id="modal-student-name" required placeholder="مثال: أحمد محمد علي" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary-500 outline-none" data-i18n-ph="ph_student_name">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="age_label">العمر</label>
+                        <input type="number" id="modal-student-age" placeholder="10" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="parent_phone_label">رقم هاتف ولي الأمر</label>
+                        <input type="text" id="modal-student-phone" placeholder="05xxxxxxxx" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary-500 outline-none" dir="ltr">
+                    </div>
+                </div>
+
+                <!-- STUDENT ENROLLED SUBJECTS -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-book-bookmark text-emerald-600"></i>
+                        <span>المواد الدراسية التي يدرسها الطالب:</span>
+                    </label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+                        <label class="flex items-center gap-2 cursor-pointer font-semibold text-slate-700 select-none">
+                            <input type="checkbox" id="subj-quran" value="القرآن الكريم" checked class="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 accent-emerald-600">
+                            <span>📖 القرآن الكريم</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer font-semibold text-slate-700 select-none">
+                            <input type="checkbox" id="subj-arabic" value="اللغة العربية" checked class="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 accent-emerald-600">
+                            <span>✍️ اللغة العربية</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer font-semibold text-slate-700 select-none">
+                            <input type="checkbox" id="subj-islamic" value="العلوم الإسلامية" checked class="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 accent-emerald-600">
+                            <span>🕌 العلوم الإسلامية</span>
+                        </label>
+                        <input type="text" id="subj-custom" placeholder="مواد إضافية أخرى (تجويد، تفسير، إلخ)..." class="col-span-full mt-1 w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+                    </div>
+                </div>
+
+                <!-- WHATSAPP GROUP LINK OR NUMBER -->
+                <div>
+                    <label class="block text-xs font-bold text-emerald-800 mb-1 flex items-center gap-1.5">
+                        <i class="fa-brands fa-whatsapp text-emerald-600 text-sm"></i>
+                        <span data-i18n="whatsapp_group_label">رابط جروب الواتساب الخاص بالملاحظات أو هاتف ولي الأمر</span>
+                    </label>
+                    <input type="text" id="modal-student-whatsapp" placeholder="https://chat.whatsapp.com/..." class="w-full px-3 py-2 rounded-xl border border-emerald-300 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" dir="ltr" data-i18n-ph="ph_whatsapp_link">
+                    <p class="text-[10px] text-slate-400 mt-1" data-i18n="whatsapp_hint">ضع رابط الجروب لإرسال التقارير اليومية إليه بنقرة واحدة</p>
+                </div>
+
+                <!-- CUSTOM AI PROMPT FOR THIS STUDENT -->
+                <div class="bg-primary-50 p-3 rounded-xl border border-primary-200 space-y-1">
+                    <label class="block text-xs font-bold text-primary-900 flex items-center gap-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i>
+                        <span data-i18n="custom_ai_prompt_label">توجيهات واقتراحات خاصة للذكاء الاصطناعي لهذا الطالب</span>
+                    </label>
+                    <textarea id="modal-student-custom-prompt" rows="2" placeholder="أدخل أسلوب صياغة التقرير المطلوب لهذا الطالب (مثال: ركز على تحفيز حفظه، التقرير يكون باللغة الإنجليزية، الخ)" class="w-full px-3 py-2 rounded-lg border border-primary-300 text-xs focus:ring-2 focus:ring-primary-500 outline-none bg-white" data-i18n-ph="ph_custom_prompt"></textarea>
+                    <p class="text-[10px] text-primary-700" data-i18n="custom_prompt_hint">يتم تضمين هذه التوجيهات تلقائياً عند توليد التقرير اليومي والشهري لهذا الطالب</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="student_notes_label">ملاحظات خاصة الطالب</label>
+                    <textarea id="modal-student-notes" rows="2" placeholder="ملاحظات حول أسلوب التعلم..." class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-primary-500 outline-none" data-i18n-ph="ph_student_notes"></textarea>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2 border-t">
+                    <button type="button" onclick="closeAddStudentModal()" class="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold" data-i18n="btn_cancel">إلغاء</button>
+                    <button type="submit" class="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-xl text-xs font-bold shadow" data-i18n="btn_save_student">حفظ الطالب</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- STUDENT PROFILE MODAL -->
+    <div id="student-profile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto border border-slate-100">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-start border-b border-slate-200 pb-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xl shadow-inner">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-lg" id="profile-student-name">اسم الطالب</h3>
+                        <p class="text-xs text-slate-500 flex items-center gap-2 mt-0.5" id="profile-student-meta">
+                            <span>العمر: -</span> • <span>رقم الولي: -</span>
+                        </p>
+                    </div>
+                </div>
+                <button onclick="closeStudentProfileModal()" class="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Enrolled Subjects & Actions Bar -->
+            <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <div id="profile-subjects-badges" class="flex flex-wrap items-center gap-1.5 text-xs">
+                    <!-- Badges injected dynamically -->
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <a id="profile-whatsapp-btn" href="#" target="_blank" class="px-2.5 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-lg text-xs font-bold transition flex items-center gap-1 hidden">
+                        <i class="fa-brands fa-whatsapp text-sm"></i> الواتساب
+                    </a>
+                    <button id="profile-edit-btn" class="px-2.5 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-xs font-bold transition border border-slate-300 flex items-center gap-1">
+                        <i class="fa-solid fa-pen text-xs"></i> تعديل
+                    </button>
+                    <button id="profile-word-btn" class="px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition border border-blue-200 flex items-center gap-1">
+                        <i class="fa-solid fa-file-word"></i> Word
+                    </button>
+                    <button id="profile-pdf-btn" class="px-2.5 py-1.5 bg-slate-800 text-white hover:bg-slate-900 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                        <i class="fa-solid fa-print"></i> PDF
+                    </button>
+                    <button id="profile-new-lesson-btn" class="px-3 py-1.5 bg-primary-700 hover:bg-primary-800 text-white rounded-lg text-xs font-bold shadow transition flex items-center gap-1">
+                        <i class="fa-solid fa-plus"></i> درس جديد
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats & Notes Cards -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-emerald-50/70 p-3 rounded-xl border border-emerald-200 text-center">
+                    <span class="block text-xl font-extrabold text-emerald-800" id="profile-lessons-count">0</span>
+                    <span class="text-[11px] font-bold text-emerald-700">إجمالي الدروس المسجلة</span>
+                </div>
+                <div class="bg-amber-50/70 p-3 rounded-xl border border-amber-200 text-center">
+                    <span class="block text-xl font-extrabold text-amber-800" id="profile-reports-count">0</span>
+                    <span class="text-[11px] font-bold text-amber-700">التقارير المكتملة</span>
+                </div>
+            </div>
+
+            <!-- Custom AI Prompt or Teacher Notes if exists -->
+            <div id="profile-custom-prompt-container" class="hidden text-xs bg-primary-50 text-primary-900 p-3 rounded-xl border border-primary-200 space-y-1">
+                <strong><i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> توجيهات الذكاء الاصطناعي للطالب:</strong>
+                <p id="profile-custom-prompt-text" class="text-primary-800 italic"></p>
+            </div>
+
+            <!-- Lessons History Heading -->
+            <div class="pt-2 border-t border-slate-200">
+                <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2 mb-3">
+                    <i class="fa-solid fa-clock-rotate-left text-emerald-700"></i>
+                    <span>سجل الدروس والتقارير اليومية للطالب</span>
+                </h4>
+
+                <div id="profile-lessons-history-list" class="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                    <!-- Lessons rendered dynamically -->
+                </div>
+            </div>
+
+            <!-- Close Button Footer -->
+            <div class="pt-3 border-t border-slate-200 flex justify-end">
+                <button type="button" onclick="closeStudentProfileModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition">
+                    إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APPLICATION LOGIC & FIREBASE INITIALIZATION -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>
