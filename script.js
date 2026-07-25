@@ -2475,47 +2475,74 @@ async function handleFileUploadAndAIAnalysis(input) {
 
 // EXPOSE GLOBAL FUNCTIONS TO WINDOW FOR INLINE HTML EVENT HANDLERS (MODULE COMPATIBILITY)
 if (typeof window !== 'undefined') {
+    // Standard Navigation & Auth
     window.navigateTo = navigateTo;
     window.toggleMobileMenu = toggleMobileMenu;
-    window.openStudentProfile = openStudentProfile;
-    window.closeStudentProfileModal = closeStudentProfileModal;
-    window.deleteStudentLessonLocal = deleteStudentLessonLocal;
-    window.copyDailyReportTextFromHistory = copyDailyReportTextFromHistory;
-    window.sendMonthlyReportWhatsApp = sendMonthlyReportWhatsApp;
-    window.parseAndFormatRawReportAI = parseAndFormatRawReportAI;
-    window.generateDailyReportAI = generateDailyReportAI;
-    window.saveDailyLessonLocally = saveDailyLessonLocally;
-    window.sendDailyReportWhatsApp = sendDailyReportWhatsApp;
-    window.toggleApiKeyVisibility = toggleApiKeyVisibility;
-    window.handleSettingsSave = handleSettingsSave;
-    window.exportBackupDataJSON = exportBackupDataJSON;
-    window.importBackupDataJSON = importBackupDataJSON;
-    window.handleFileUploadAndSummarizeAI = handleFileUploadAndSummarizeAI;
-    window.onDailyDateChanged = onDailyDateChanged;
-    window.updateCalculatedLessonNumber = updateCalculatedLessonNumber;
-    window.selectStudentForDaily = selectStudentForDaily;
-    window.editStudent = editStudent;
-    window.deleteStudent = deleteStudent;
+    window.handleAuthSubmit = handleAuthSubmit;
+    window.handleLogin = handleAuthSubmit; // Alias requested by user
+    window.handleDemoAuth = handleDemoAuth;
+    window.toggleAuthMode = toggleAuthMode;
+    window.logout = logout;
+
+    // Language
+    window.toggleLanguage = toggleLanguage;
+    window.switchLanguage = toggleLanguage; // Alias requested by user
+    window.applyLanguage = applyLanguage;
+
+    // Student Management
     window.openAddStudentModal = openAddStudentModal;
     window.closeAddStudentModal = closeAddStudentModal;
     window.handleAddStudentSubmit = handleAddStudentSubmit;
     window.saveStudent = handleAddStudentSubmit;
+    window.editStudent = editStudent;
+    window.deleteStudent = deleteStudent;
     window.filterStudents = filterStudents;
-    window.exportStudentReportsDoc = exportStudentReportsDoc;
-    window.printStudentReportsPDF = printStudentReportsPDF;
-    window.printMonthlyReportPDF = printMonthlyReportPDF;
-    window.exportMonthlyReportDoc = exportMonthlyReportDoc;
+    window.openStudentProfile = openStudentProfile;
+    window.closeStudentProfileModal = closeStudentProfileModal;
+
+    // Daily Lesson & AI Analysis
+    window.onDailyStudentChanged = onDailyStudentChanged;
+    window.onDailyDateChanged = onDailyDateChanged;
+    window.onSubjectChanged = onSubjectChanged;
+    window.onSubjectSelectionChanged = onSubjectSelectionChanged;
+    window.selectAllDailySubjects = selectAllDailySubjects;
+    window.updateCalculatedLessonNumber = updateCalculatedLessonNumber;
+    window.selectStudentForDaily = selectStudentForDaily;
+    window.parseAndFormatRawReportAI = parseAndFormatRawReportAI;
+    window.generateDailyReportAI = generateDailyReportAI;
+    window.analyzeReport = generateDailyReportAI; // Alias requested by user
+    window.handleFileUploadAndAIAnalysis = handleFileUploadAndAIAnalysis;
+    window.handleFileUploadAndSummarizeAI = handleFileUploadAndAIAnalysis;
+    window.saveDailyLessonLocally = saveDailyLessonLocally;
+    window.handleDailyLessonSubmit = saveDailyLessonLocally;
+    window.copyDailyReportText = copyDailyReportText;
+    window.copyDailyReportTextFromHistory = copyDailyReportTextFromHistory;
+    window.sendDailyReportWhatsApp = sendDailyReportWhatsApp;
+    window.deleteStudentLessonLocal = deleteStudentLessonLocal;
+
+    // Monthly Report & Charts
+    window.onMonthlyStudentChanged = onMonthlyStudentChanged;
+    window.selectAllMonthlySubjects = selectAllMonthlySubjects;
+    window.onMonthlySubjectSelectionChanged = onMonthlySubjectSelectionChanged;
+    window.updateStudentProgressChart = updateStudentProgressChart;
     window.generateMonthlyReportAI = generateMonthlyReportAI;
     window.saveMonthlyReportLocally = saveMonthlyReportLocally;
-    window.exportAllDataBackup = exportAllDataBackup;
-    window.importDataBackup = importDataBackup;
+    window.saveMonthlyReportToFirebase = saveMonthlyReportLocally;
+    window.sendMonthlyReportWhatsApp = sendMonthlyReportWhatsApp;
+    window.exportStudentReportsDoc = exportStudentReportsDoc;
+    window.exportStudentReportsDocFromMonthly = exportStudentReportsDoc;
+    window.printStudentReportsPDF = printStudentReportsPDF;
+    window.printStudentReportsPDFFromMonthly = printStudentReportsPDF;
+    window.printMonthlyReportPDF = printMonthlyReportPDF;
+    window.exportMonthlyReportDoc = exportMonthlyReportDoc;
+
+    // Settings & Backup
+    window.toggleApiKeyVisibility = toggleApiKeyVisibility;
+    window.handleSettingsSave = handleSettingsSave;
     window.loadSettingsInputs = loadSettingsInputs;
     window.getEffectiveGeminiApiKey = getEffectiveGeminiApiKey;
-    window.handleAuthSubmit = handleAuthSubmit;
-    window.handleDemoAuth = handleDemoAuth;
-    window.toggleAuthMode = toggleAuthMode;
-    window.logout = logout;
-    window.onSubjectChanged = onSubjectChanged;
-    window.toggleLanguage = toggleLanguage;
-    window.applyLanguage = applyLanguage;
+    window.exportBackupDataJSON = exportBackupDataJSON;
+    window.exportAllDataBackup = exportAllDataBackup;
+    window.importBackupDataJSON = importBackupDataJSON;
+    window.importDataBackup = importDataBackup;
 }
