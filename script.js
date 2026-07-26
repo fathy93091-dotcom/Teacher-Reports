@@ -338,6 +338,7 @@ function onTeacherLoggedIn(userObj) {
 // INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
     applyLanguage();
+    loadSettingsInputs();
 
     // Attach form submit listeners programmatically to prevent any default browser page reloads
     const authForm = document.querySelector('#auth-section form');
@@ -2294,11 +2295,20 @@ function loadSettingsInputs() {
     const aiModelSelect = document.getElementById('settings-ai-model');
     const globalInstrText = document.getElementById('settings-global-instructions');
 
+    if (aiModelSelect) {
+        // Dynamically remove any legacy 'pro' options from the select dropdown
+        Array.from(aiModelSelect.options).forEach(opt => {
+            if (opt.value.toLowerCase().includes('pro') || opt.text.toLowerCase().includes('pro')) {
+                opt.remove();
+            }
+        });
+    }
+
     const savedKey = localStorage.getItem('gemini_api_key') || localStorage.getItem('user_gemini_api_key');
     if (apiKeyInput && savedKey) apiKeyInput.value = savedKey;
 
     let savedModel = localStorage.getItem('user_gemini_model');
-    if (!savedModel || savedModel.includes('pro')) {
+    if (!savedModel || savedModel.toLowerCase().includes('pro')) {
         savedModel = 'gemini-1.5-flash';
         localStorage.setItem('user_gemini_model', 'gemini-1.5-flash');
     }
@@ -2325,7 +2335,10 @@ async function handleSettingsSave(e) {
     if (e && e.preventDefault) e.preventDefault();
     const newName = document.getElementById('settings-teacher-name')?.value;
     const apiKey = document.getElementById('settings-api-key')?.value.trim() || '';
-    const aiModel = document.getElementById('settings-ai-model')?.value || 'gemini-1.5-flash';
+    let aiModel = document.getElementById('settings-ai-model')?.value || 'gemini-1.5-flash';
+    if (!aiModel || aiModel.toLowerCase().includes('pro')) {
+        aiModel = 'gemini-1.5-flash';
+    }
     const globalInstr = document.getElementById('settings-global-instructions')?.value || '';
 
     if (apiKey) {
