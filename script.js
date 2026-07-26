@@ -1249,13 +1249,15 @@ async function callGeminiAPI(prompt, inlineData = null) {
         throw new Error(currentLang === 'ar' ? "يرجى إضافة مفتاح API الخاص بك من صفحة الإعدادات أولاً." : "Please add your API key in Settings first.");
     }
 
+    // Force model to gemini-1.5-flash or gemini-2.0-flash, strictly eliminating any 'pro' model
     let selectedModel = document.getElementById('settings-ai-model')?.value || localStorage.getItem('user_gemini_model') || 'gemini-1.5-flash';
-    if (!selectedModel || selectedModel.includes('pro')) {
+    if (!selectedModel || selectedModel.toLowerCase().includes('pro')) {
         selectedModel = 'gemini-1.5-flash';
         localStorage.setItem('user_gemini_model', 'gemini-1.5-flash');
     }
+
     const modelsToTry = [selectedModel, 'gemini-1.5-flash', 'gemini-2.0-flash'];
-    const uniqueModels = [...new Set(modelsToTry)].filter(m => m && !m.includes('pro'));
+    const uniqueModels = [...new Set(modelsToTry)].filter(m => m && !m.toLowerCase().includes('pro'));
 
     const parts = [{ text: prompt }];
     if (inlineData && inlineData.mimeType && inlineData.data) {
