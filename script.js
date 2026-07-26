@@ -1249,9 +1249,13 @@ async function callGeminiAPI(prompt, inlineData = null) {
         throw new Error(currentLang === 'ar' ? "يرجى إضافة مفتاح API الخاص بك من صفحة الإعدادات أولاً." : "Please add your API key in Settings first.");
     }
 
-    const selectedModel = document.getElementById('settings-ai-model')?.value || localStorage.getItem('user_gemini_model') || 'gemini-1.5-flash';
+    let selectedModel = document.getElementById('settings-ai-model')?.value || localStorage.getItem('user_gemini_model') || 'gemini-1.5-flash';
+    if (selectedModel.includes('1.5-pro')) {
+        selectedModel = 'gemini-1.5-flash';
+        localStorage.setItem('user_gemini_model', 'gemini-1.5-flash');
+    }
     const modelsToTry = [selectedModel, 'gemini-1.5-flash', 'gemini-2.0-flash'];
-    const uniqueModels = [...new Set(modelsToTry)];
+    const uniqueModels = [...new Set(modelsToTry)].filter(m => !m.includes('1.5-pro'));
 
     const parts = [{ text: prompt }];
     if (inlineData && inlineData.mimeType && inlineData.data) {
@@ -2289,8 +2293,12 @@ function loadSettingsInputs() {
     const savedKey = localStorage.getItem('gemini_api_key') || localStorage.getItem('user_gemini_api_key');
     if (apiKeyInput && savedKey) apiKeyInput.value = savedKey;
 
-    const savedModel = localStorage.getItem('user_gemini_model');
-    if (aiModelSelect && savedModel) aiModelSelect.value = savedModel;
+    let savedModel = localStorage.getItem('user_gemini_model');
+    if (!savedModel || savedModel.includes('1.5-pro')) {
+        savedModel = 'gemini-1.5-flash';
+        localStorage.setItem('user_gemini_model', 'gemini-1.5-flash');
+    }
+    if (aiModelSelect) aiModelSelect.value = savedModel;
 
     const savedInstr = localStorage.getItem('user_global_instructions');
     if (globalInstrText && savedInstr) globalInstrText.value = savedInstr;
