@@ -16,9 +16,6 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// 2) GEMINI API KEY (STORED SECURELY IN LOCALSTORAGE VIA SETTINGS)
-const GEMINI_API_KEY = "";
-
 // APP STATE & I18N DICTIONARY
 let currentUser = null;
 let studentsList = [];
@@ -1221,37 +1218,10 @@ function extractAndParseJSON(text) {
 }
 
 function getEffectiveGeminiApiKey() {
-    // 1) Check Vercel / Environment Variables (NEXT_PUBLIC_GEMINI_API_KEY)
-    let envKey = '';
-    try {
-        if (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-            envKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-        }
-    } catch (e) {}
-
-    if (!envKey && typeof window !== 'undefined') {
-        envKey = window.NEXT_PUBLIC_GEMINI_API_KEY || (window.ENV && window.ENV.NEXT_PUBLIC_GEMINI_API_KEY) || '';
-    }
-
-    if (!envKey) {
-        try {
-            const getMetaEnv = new Function('try { return import.meta.env; } catch(e) { return null; }');
-            const metaEnv = getMetaEnv();
-            if (metaEnv && metaEnv.NEXT_PUBLIC_GEMINI_API_KEY) {
-                envKey = metaEnv.NEXT_PUBLIC_GEMINI_API_KEY;
-            }
-        } catch (e) {}
-    }
-
-    if (envKey && envKey.trim()) {
-        return envKey.trim();
-    }
-
-    // 2) Check Settings UI Input field
+    // Read strictly from Settings UI input or LocalStorage (manually entered in Settings by user)
     const fromInput = document.getElementById('settings-api-key')?.value.trim();
     if (fromInput) return fromInput;
 
-    // 3) Fallback to LocalStorage
     const fromStorage = localStorage.getItem('gemini_api_key') || localStorage.getItem('user_gemini_api_key') || '';
     return fromStorage.trim();
 }
