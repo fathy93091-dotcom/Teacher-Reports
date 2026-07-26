@@ -1250,12 +1250,12 @@ async function callGeminiAPI(prompt, inlineData = null) {
     }
 
     let selectedModel = document.getElementById('settings-ai-model')?.value || localStorage.getItem('user_gemini_model') || 'gemini-1.5-flash';
-    if (selectedModel.includes('1.5-pro')) {
+    if (!selectedModel || selectedModel.includes('pro')) {
         selectedModel = 'gemini-1.5-flash';
         localStorage.setItem('user_gemini_model', 'gemini-1.5-flash');
     }
     const modelsToTry = [selectedModel, 'gemini-1.5-flash', 'gemini-2.0-flash'];
-    const uniqueModels = [...new Set(modelsToTry)].filter(m => !m.includes('1.5-pro'));
+    const uniqueModels = [...new Set(modelsToTry)].filter(m => m && !m.includes('pro'));
 
     const parts = [{ text: prompt }];
     if (inlineData && inlineData.mimeType && inlineData.data) {
@@ -1269,8 +1269,7 @@ async function callGeminiAPI(prompt, inlineData = null) {
         try {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
             const headers = { 
-                'Content-Type': 'application/json',
-                'x-goog-api-key': apiKey
+                'Content-Type': 'application/json'
             };
 
             const response = await fetch(url, {
@@ -1290,6 +1289,9 @@ async function callGeminiAPI(prompt, inlineData = null) {
                 if (errStatus === 400 || errStatus === 401 || errStatus === 403) {
                     isAuthError = true;
                     lastErrorMsg = "مفتاح API غير صالح أو محظور/منتهي. يرجى إدخال مفتاح جديد وتأكيده في صفحة الإعدادات.";
+                } else if (errStatus === 404) {
+                    isAuthError = true;
+                    lastErrorMsg = "مفتاح API الخاص بك غير صالح أو غير مفعل لخدمة Gemini. يرجى إدخال مفتاح API صحيح من Google AI Studio في صفحة الإعدادات.";
                 } else if (errStatus === 429) {
                     lastErrorMsg = "تم تجاوز حد الاستخدام المسموح لـ Gemini API. يرجى الانتظار قليلاً ثم إعادة المحاولة.";
                 } else if (errStatus >= 500) {
@@ -2294,7 +2296,7 @@ function loadSettingsInputs() {
     if (apiKeyInput && savedKey) apiKeyInput.value = savedKey;
 
     let savedModel = localStorage.getItem('user_gemini_model');
-    if (!savedModel || savedModel.includes('1.5-pro')) {
+    if (!savedModel || savedModel.includes('pro')) {
         savedModel = 'gemini-1.5-flash';
         localStorage.setItem('user_gemini_model', 'gemini-1.5-flash');
     }
